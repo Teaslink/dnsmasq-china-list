@@ -1,4 +1,4 @@
-name: Sync upstream master
+name: Sync upstream domain files
 
 on:
   workflow_dispatch:
@@ -14,14 +14,21 @@ jobs:
     steps:
       - name: Checkout fork
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
-      - name: Merge upstream master
+      - name: Download upstream domain files
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote add upstream https://github.com/felixonmars/dnsmasq-china-list.git
-          git fetch upstream master
-          git merge --ff-only upstream/master || git merge --no-edit upstream/master
+          for file in accelerated-domains.china.conf apple.china.conf google.china.conf; do
+            curl -fsSL "https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/${file}" -o "${file}"
+          done
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- accelerated-domains.china.conf apple.china.conf google.china.conf; then
+            echo "No upstream changes."
+            exit 0
+          fi
+          git add accelerated-domains.china.conf apple.china.conf google.china.conf
+          git commit -m "同步 dnsmasq 上游域名文件"
           git push origin HEAD:master
