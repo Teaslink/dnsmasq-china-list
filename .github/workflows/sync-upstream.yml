@@ -1,0 +1,27 @@
+name: Sync upstream master
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 18 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Merge upstream master
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/felixonmars/dnsmasq-china-list.git
+          git fetch upstream master
+          git merge --ff-only upstream/master || git merge --no-edit upstream/master
+          git push origin HEAD:master
